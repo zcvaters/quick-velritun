@@ -1,0 +1,5 @@
+.idea/
+.aws-sam/
+.DS_Store
+# Bring README back eventually
+README.md 
