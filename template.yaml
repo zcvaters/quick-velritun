@@ -10,11 +10,17 @@ Globals:
   Function:
     Timeout: 5
 
+Parameters:
+  WordsURL:
+    Type: String
+    Description:
+    Default: None
+
 Resources:
   TypingTestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: cmd
+      CodeUri: app/cmd
       Handler: typingtest
       Runtime: go1.x
       Tracing: Active
@@ -24,6 +30,9 @@ Resources:
           Properties:
             Path: /typingtest
             Method: POST
+      Environment:
+        Variables:
+          TEST_WORDS_URL: !Ref WordsURL
 
 
 Outputs:
