@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/aws/aws-lambda-go/lambda"
-	handlers "github.com/zcvaters/quick-velritun/pkg/handlers"
+	handlers "github.com/zcvaters/quick-velritun/app/pkg/handlers"
 )
 
 func main() {
