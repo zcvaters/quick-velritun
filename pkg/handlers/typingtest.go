@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"crypto/rand"
@@ -9,12 +9,9 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
-var (
-	wordsUrl = "https://monkeytype.com/languages/english.json"
-)
+var wordsUrl = "https://monkeytype.com/languages/english.json"
 
 type TypingTestRequest struct {
 	Words int `json:"words"`
@@ -29,8 +26,8 @@ type MonkeyTypeResponse struct {
 	Words []string `json:"words"`
 }
 
-// Handler for creating a request to create a typing test.
-func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+// TypingTest for creating a request to create a typing test.
+func TypingTest(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var testRequest TypingTestRequest
 	err := json.Unmarshal([]byte(request.Body), &testRequest)
 	if err != nil {
@@ -38,7 +35,7 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	}
 
 	if testRequest.Words > 20 {
-		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprint("Invalid request words must be less 20 than 20.")})
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprint("Invalid request words must be less then 20.")})
 	}
 
 	req, err := http.NewRequest("GET", wordsUrl, nil)
@@ -81,6 +78,6 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 	return apiResponse(http.StatusOK, typingTestRes)
 }
 
-func main() {
-	lambda.Start(handler)
-}
+// func main() {
+// 	lambda.Start(handler)
+// }
