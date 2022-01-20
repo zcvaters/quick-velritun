@@ -1,5 +1,6 @@
 .idea/
 .aws-sam/
 .DS_Store
+.vscode/
 # Bring README back eventually
 README.md 

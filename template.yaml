@@ -2,10 +2,10 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   quick-velritun-api
-  
-  Sample SAM Template for quick-velritun-api
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+  Quick Velritun (typing in icelandic) an api for generating typing tests, primarily to be
+  used through discord. WIP
+
 Globals:
   Function:
     Timeout: 5
@@ -14,7 +14,7 @@ Resources:
   TypingTestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: pkg/handlers
+      CodeUri: cmd
       Handler: typingtest
       Runtime: go1.x
       Tracing: Active
