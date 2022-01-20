@@ -2,5 +2,6 @@
 .aws-sam/
 .DS_Store
 .vscode/
+.env
 # Bring README back eventually
 README.md 
