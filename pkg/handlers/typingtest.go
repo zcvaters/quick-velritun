@@ -3,61 +3,70 @@ package main
 import (
 	"crypto/rand"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"net/http"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 var (
-
-	// ErrNon200Response non 200 status code in response
-	ErrNon200Response = errors.New("non 200 Response found")
-
 	wordsUrl = "https://monkeytype.com/languages/english.json"
 )
 
 type TypingTestRequest struct {
-	Words int `json:"words,omitempty"`
+	Words int `json:"words"`
 }
 
 type TypingTestResponse struct {
-	Words []string `json:"words"`
+	Error string   `json:"error,omitempty"`
+	Words []string `json:"word"`
 }
 
 type MonkeyTypeResponse struct {
 	Words []string `json:"words"`
 }
 
-func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
+// Handler for creating a request to create a typing test.
+func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var testRequest TypingTestRequest
-	// Unmarshal the json, return 404 if error
 	err := json.Unmarshal([]byte(request.Body), &testRequest)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: fmt.Sprintf("failed to make request %v", err.Error()), StatusCode: http.StatusBadRequest}, nil
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprintf("Failed to unmarshal: %v", err)})
 	}
 
-	req, _ := http.NewRequest("GET", wordsUrl, nil)
+	if testRequest.Words > 20 {
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprint("Invalid request words must be less 20 than 20.")})
+	}
 
-	res, _ := http.DefaultClient.Do(req)
+	req, err := http.NewRequest("GET", wordsUrl, nil)
+	if err != nil {
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprintf("Failed to create request: %v", err)})
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprintf("Failed to do request: %v", err)})
+	}
 
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			fmt.Println("error closing body")
+			return
 		}
 	}(res.Body)
-	body, _ := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprintf("Failed to read all body: %v", err)})
+	}
 
 	var testResponse MonkeyTypeResponse
 	err = json.Unmarshal(body, &testResponse)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: http.StatusBadRequest}, nil
+		return apiResponse(http.StatusBadRequest, TypingTestResponse{Error: fmt.Sprintf("Failed to unmarshal data: %v", err)})
 	}
 
 	lenWords := len(testResponse.Words)
@@ -65,18 +74,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	for i := 0; i < testRequest.Words; i++ {
 		number, err := rand.Int(rand.Reader, big.NewInt(int64(lenWords)))
 		if err != nil {
-			return events.APIGatewayProxyResponse{}, err
+			return apiResponse(http.StatusInternalServerError, TypingTestResponse{Error: fmt.Sprintf("Failed to generate int: %v", err)})
 		}
 		typingTestRes.Words = append(typingTestRes.Words, testResponse.Words[number.Int64()])
 	}
-
-	stringBody, _ := json.Marshal(typingTestRes)
-
-	return events.APIGatewayProxyResponse{
-		Headers:    map[string]string{"Content-Type": "application/json"},
-		Body:       string(stringBody),
-		StatusCode: 200,
-	}, nil
+	return apiResponse(http.StatusOK, typingTestRes)
 }
 
 func main() {
